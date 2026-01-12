@@ -4,12 +4,11 @@ import torch.nn as nn
 import cv2
 import numpy as np
 
-# ---------------- UI ----------------
+st.set_page_config(page_title="Oil Spill Detection", layout="centered")
+
 st.title("Oil Spill Detection using SAR Images")
 st.write("Upload a SAR image to detect oil spill")
 
-# ---------------- MODEL DEFINITION ----------------
-# ⚠️ COPY THIS CLASS EXACTLY FROM Final_Training.ipynb
 class OilSpillCNN(nn.Module):
     def __init__(self):
         super(OilSpillCNN, self).__init__()
@@ -26,14 +25,13 @@ class OilSpillCNN(nn.Module):
         x = self.sigmoid(self.fc1(x))
         return x
 
-# ---------------- LOAD MODEL ----------------
-model = OilSpillCNN()
-model.load_state_dict(
-    torch.load("oil_spill_model.pth", map_location=torch.device("cpu"))
-)
+device = torch.device("cpu")
+
+model = OilSpillCNN().to(device)
+state_dict = torch.load("oil_spill_model.pth", map_location=device)
+model.load_state_dict(state_dict, strict=False)
 model.eval()
 
-# ---------------- IMAGE PREPROCESSING ----------------
 def preprocess_image(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
@@ -41,21 +39,24 @@ def preprocess_image(image):
     image = image / 255.0
     image = np.expand_dims(image, axis=0)
     image = np.expand_dims(image, axis=0)
-    return torch.tensor(image, dtype=torch.float32)
+    return torch.tensor(image, dtype=torch.float32).to(device)
 
-# ---------------- FILE UPLOAD ----------------
-uploaded_file = st.file_uploader("Upload SAR Image", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("Upload SAR Image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
     image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
     img_tensor = preprocess_image(image)
 
     with torch.no_grad():
         output = model(img_tensor)
 
+    st.subheader("Prediction Result")
+
     if output.item() > 0.5:
-        st.success("Prediction: Oil Spill Detected")
+        st.error("Oil Spill Detected")
     else:
-        st.success("Prediction: No Oil Spill Detected")
+        st.success("No Oil Spill Detected")
