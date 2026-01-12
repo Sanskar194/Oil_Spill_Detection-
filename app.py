@@ -11,7 +11,6 @@ model.load_state_dict(torch.load("oil_spill_model.pth", map_location=torch.devic
 model.eval()
 
 
-=======
 def preprocess_image(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
@@ -25,7 +24,6 @@ def preprocess_image(image):
 uploaded_file = st.file_uploader("Upload SAR Image", type=["jpg", "png", "jpeg"])
 
 
-=======
 uploaded_file = st.file_uploader("Upload SAR Image", type=["jpg", "png", "jpeg"])
 
 
@@ -34,14 +32,12 @@ if uploaded_file is not None:
     image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
 
-=======
 
 
     img_tensor = preprocess_image(image)
     with torch.no_grad():
         output = model(img_tensor)
 
-=======
     if output.item() > 0.5:
         st.success("Prediction: Oil Spill Detected")
     else:
